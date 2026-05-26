@@ -1,0 +1,80 @@
+<!--
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<script lang="ts">
+  import { InfoIcon } from "@lucide/svelte"
+  import DistanceSlider from "$lib/components/distance-slider.svelte"
+  import { actuationQueryContext } from "$lib/configurator/queries/actuation-query.svelte"
+  import { switchMapQueryContext } from "$lib/configurator/queries/switch-map-query.svelte"
+  import { getKeyStrokeMm } from "$lib/distance-display.svelte"
+  import { DEFAULT_ACTUATION_POINT } from "$lib/libhmk/actuation"
+  import type { HMK_AKDynamicKeystroke } from "$lib/libhmk/advanced-keys"
+  import { m } from "$lib/paraglide/messages.js"
+  import { cn, type WithoutChildren } from "$lib/utils"
+  import type { HTMLAttributes } from "svelte/elements"
+  import { configMenuStateContext } from "../context.svelte"
+
+  const {
+    class: className,
+    ...props
+  }: WithoutChildren<HTMLAttributes<HTMLDivElement>> = $props()
+
+  const configMenuState = configMenuStateContext.get()
+  const { key } = $derived(configMenuState.advancedKey)
+  const action = $derived(
+    configMenuState.advancedKey.action as HMK_AKDynamicKeystroke,
+  )
+
+  const actuationQuery = actuationQueryContext.get()
+  const { current: actuationMap } = $derived(actuationQuery.actuationMap)
+  const { current: switchMap } = $derived(switchMapQueryContext.get().switchMap)
+  const strokeMm = $derived(getKeyStrokeMm(key, switchMap))
+</script>
+
+<div class={cn("flex flex-col gap-4", className)} {...props}>
+  <DistanceSlider
+    bind:committed={
+      () => actuationMap?.[key].actuationPoint ?? DEFAULT_ACTUATION_POINT,
+      (v) =>
+        actuationMap &&
+        actuationQuery.set({
+          offset: key,
+          data: [{ ...actuationMap[key], actuationPoint: v }],
+        })
+    }
+    description={m.dks_perf_ap_description()}
+    disabled={!actuationMap}
+    max={action.bottomOutPoint}
+    {strokeMm}
+    title={m.dks_perf_ap()}
+  />
+  <DistanceSlider
+    bind:committed={
+      () => action.bottomOutPoint,
+      (v) => configMenuState.updateAction({ ...action, bottomOutPoint: v })
+    }
+    description={m.dks_perf_bop_description()}
+    disabled={!actuationMap}
+    min={actuationMap?.[key].actuationPoint}
+    {strokeMm}
+    title={m.dks_perf_bop()}
+  />
+  <div class="flex items-center gap-2 text-muted-foreground">
+    <InfoIcon class="size-4" />
+    <p class="text-sm">
+      {m.dks_perf_rt_disabled()}
+    </p>
+  </div>
+</div>
