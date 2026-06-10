@@ -60,6 +60,20 @@ export type AppChangelogEntry = {
 
 export const appChangelog: AppChangelogEntry[] = [
   {
+    version: "1.1.1",
+    date: "2026-06",
+    changes: {
+      en: [
+        "Fix Web DFU firmware update for AT32 keyboards (DfuSe support)",
+        "Keep the update dialog alive when the keyboard reboots into DFU",
+      ],
+      ja: [
+        "Web DFU を AT32 キーボードで書き込めるよう修正（DfuSe 対応）",
+        "DFU 再起動時に更新ダイアログが閉じないよう修正",
+      ],
+    },
+  },
+  {
     version: "1.1.0",
     date: "2026-06",
     changes: {

@@ -84,19 +84,6 @@ export class DFUDevice {
       this.#alternateSetting,
     )
     await this.#detectDfuSe()
-    console.info(
-      "[DFU] connected. iface=%d alt=%d → mode=%s transferSize=%d layout=%o",
-      this.#interfaceNumber,
-      this.#alternateSetting,
-      this.#dfuseLayout ? "DfuSe" : "plain DFU",
-      this.#transferSize,
-      this.#dfuseLayout
-        ? {
-            start: "0x" + this.#dfuseLayout.startAddress.toString(16),
-            pages: this.#dfuseLayout.pages.length,
-          }
-        : null,
-    )
   }
 
   // Read the USB descriptors directly to detect DfuSe and obtain the flash
@@ -115,16 +102,8 @@ export class DFUDevice {
       if (!layoutStr && info.iInterface > 0) {
         layoutStr = await this.#readStringDescriptor(info.iInterface)
       }
-      console.info(
-        "[DFU] descriptor: iInterface=%d bcdDFU=0x%s wTransferSize=%d name=%o",
-        info.iInterface,
-        info.bcdDFUVersion.toString(16),
-        info.wTransferSize,
-        layoutStr,
-      )
       this.#dfuseLayout = parseDfuSeLayout(layoutStr)
-    } catch (e) {
-      console.warn("[DFU] descriptor read failed:", e)
+    } catch {
       this.#dfuseLayout = parseDfuSeLayout(this.#interfaceName)
     }
   }
@@ -228,7 +207,6 @@ export class DFUDevice {
     // A stalled GETSTATUS usually means the device is in an error state; clear
     // it once and retry before giving up.
     if (result.status === "stall") {
-      console.warn("[DFU] GETSTATUS stalled, clearing status and retrying")
       try {
         await this.clearStatus()
       } catch {
@@ -355,30 +333,15 @@ export class DFUDevice {
     await this.#ensureIdle()
 
     // 1. Erase the pages we are about to write (page-granular, not mass erase).
-    const erasePages = pagesInRange(layout, start, start + totalBytes)
-    console.info(
-      "[DfuSe] flashing %d bytes at 0x%s, erasing %d pages",
-      totalBytes,
-      start.toString(16),
-      erasePages.length,
-    )
-    for (let i = 0; i < erasePages.length; i++) {
-      console.debug(
-        "[DfuSe] erase %d/%d @ 0x%s",
-        i + 1,
-        erasePages.length,
-        erasePages[i].toString(16),
-      )
-      await this.#dfuseCommand([DFUSE_ERASE, ...le32(erasePages[i])])
+    for (const pageAddr of pagesInRange(layout, start, start + totalBytes)) {
+      await this.#dfuseCommand([DFUSE_ERASE, ...le32(pageAddr)])
     }
 
     // 2. Set the address pointer to the firmware start.
-    console.info("[DfuSe] set address 0x%s", start.toString(16))
     await this.#dfuseCommand([DFUSE_SET_ADDRESS, ...le32(start)])
 
     // 3. Stream data. wBlockNum starts at 2; the device writes each block at
     //    address = pointer + (wBlockNum - 2) * transferSize.
-    console.info("[DfuSe] writing data (transferSize=%d)", transferSize)
     let bytesSent = 0
     let blockNum = 2
     while (bytesSent < totalBytes) {
@@ -404,7 +367,6 @@ export class DFUDevice {
 
     // 4. Leave DFU: set the address pointer, then a zero-length download
     //    triggers manifestation and the device resets into the new firmware.
-    console.info("[DfuSe] write complete, leaving DFU")
     await this.#dfuseCommand([DFUSE_SET_ADDRESS, ...le32(start)])
     try {
       await this.download(0, new ArrayBuffer(0))
