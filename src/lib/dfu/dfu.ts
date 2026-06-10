@@ -66,3 +66,8 @@ export const DFU_CLASS = 0xfe
 export const DFU_SUBCLASS = 0x01
 export const DFU_PROTOCOL_RUNTIME = 0x01
 export const DFU_PROTOCOL_DFU = 0x02
+
+// DfuSe (ST/Artery DFU extension) command bytes, sent via DFU_DNLOAD with
+// wBlockNum = 0. AT32 ROM bootloaders use DfuSe rather than plain DFU 1.1.
+export const DFUSE_SET_ADDRESS = 0x21
+export const DFUSE_ERASE = 0x41

@@ -15,7 +15,11 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { featureVersionMap, type Feature } from "./libhmk"
+import {
+  featureVersionMap,
+  HMK_FIRMWARE_MAX_VERSION,
+  type Feature,
+} from "./libhmk"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -27,6 +31,15 @@ export function isWebHIDSSupported() {
 
 export function displayVersion(v: number) {
   return `v${v >> 8}.${v & 0xff}`
+}
+
+// The ReConf application version, injected by Vite from package.json.
+export const appVersion = __APP_VERSION__
+
+// Whether a newer firmware version is known to ReConf than the one currently
+// running on the connected keyboard.
+export function isFirmwareUpdateAvailable(version: number) {
+  return version < HMK_FIRMWARE_MAX_VERSION
 }
 
 export function stringNullable<T>(v: T | null) {

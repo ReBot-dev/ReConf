@@ -25,6 +25,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   import * as Dialog from "$lib/components/ui/dialog"
   import { isWebUSBSupported } from "$lib/dfu/dfu-connect"
   import { DFUFlashManager, type DFUFlashStep } from "$lib/dfu/dfu-state.svelte"
+  import { firmwareUpdateState } from "$lib/dfu/firmware-update-state.svelte"
   import { keyboardContext } from "$lib/keyboard"
   import { m } from "$lib/paraglide/messages.js"
 
@@ -49,6 +50,16 @@ this program. If not, see <https://www.gnu.org/licenses/>.
     if (!canClose) return
     open = false
     manager.reset()
+    // Update flow finished/cancelled: allow the landing page to return to the
+    // connect screen for a fresh reconnect (the keyboard has rebooted).
+    firmwareUpdateState.inProgress = false
+  }
+
+  function startUpdate() {
+    // Mark the update as in progress *before* the bootloader command, so the
+    // expected WebHID disconnect does not tear down this dialog.
+    firmwareUpdateState.inProgress = true
+    manager.enterBootloader(keyboard)
   }
 
   async function handleFileSelect() {
@@ -130,7 +141,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
             >
           {/snippet}
         </Dialog.Close>
-        <Button size="sm" onclick={() => manager.enterBootloader(keyboard)}>
+        <Button size="sm" onclick={startUpdate}>
           {m.firmware_start_update()}
         </Button>
       </Dialog.Footer>

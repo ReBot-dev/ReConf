@@ -16,11 +16,19 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 <script lang="ts">
   import FixedScrollArea from "$lib/components/fixed-scroll-area.svelte"
   import Switch from "$lib/components/switch.svelte"
+  import { Badge } from "$lib/components/ui/badge"
   import { Button } from "$lib/components/ui/button"
   import * as Dialog from "$lib/components/ui/dialog"
   import { keyboardContext } from "$lib/keyboard"
+  import { HMK_FIRMWARE_MAX_VERSION } from "$lib/libhmk"
   import { m } from "$lib/paraglide/messages.js"
-  import { cn, isFeatureAvailable, type WithoutChildren } from "$lib/utils"
+  import {
+    cn,
+    displayVersion,
+    isFeatureAvailable,
+    isFirmwareUpdateAvailable,
+    type WithoutChildren,
+  } from "$lib/utils"
   import type { HTMLAttributes } from "svelte/elements"
   import { optionsQueryContext } from "../queries/options-query.svelte"
   import { profileQueryContext } from "../queries/profile-query.svelte"
@@ -41,6 +49,8 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   const profileQuery = profileQueryContext.get()
   const optionsQuery = optionsQueryContext.get()
   const { current: options } = $derived(optionsQuery.options)
+
+  const updateAvailable = isFirmwareUpdateAvailable(version)
 </script>
 
 <div
@@ -69,6 +79,20 @@ this program. If not, see <https://www.gnu.org/licenses/>.
         <span class="text-muted-foreground">
           {m.settings_firmware_update_description()}
         </span>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="text-muted-foreground">
+          {m.firmware_current_version({ version: displayVersion(version) })}
+        </span>
+        {#if updateAvailable}
+          <Badge>
+            {m.firmware_update_available({
+              version: displayVersion(HMK_FIRMWARE_MAX_VERSION),
+            })}
+          </Badge>
+        {:else}
+          <Badge variant="secondary">{m.firmware_up_to_date()}</Badge>
+        {/if}
       </div>
       <div>
         <FirmwareUpdateDialog />

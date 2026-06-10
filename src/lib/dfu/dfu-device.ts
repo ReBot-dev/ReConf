@@ -17,8 +17,15 @@ import {
   DFU_Request,
   DFU_State,
   DFU_Status,
+  DFUSE_ERASE,
+  DFUSE_SET_ADDRESS,
   type DFU_StatusResponse,
 } from "./dfu"
+import {
+  parseDfuSeLayout,
+  pagesInRange,
+  type DfuSeLayout,
+} from "./dfuse-layout"
 
 export class DFUDeviceError extends Error {
   constructor(message: string) {
@@ -32,18 +39,170 @@ export type DFUFlashOptions = {
   onProgress?: (bytesSent: number, totalBytes: number) => void
 }
 
+// 32-bit little-endian byte array, used for DfuSe address/erase command operands.
+function le32(value: number): number[] {
+  return [
+    value & 0xff,
+    (value >>> 8) & 0xff,
+    (value >>> 16) & 0xff,
+    (value >>> 24) & 0xff,
+  ]
+}
+
 export class DFUDevice {
   #device: USBDevice
   #interfaceNumber: number
+  #alternateSetting: number
+  #interfaceName?: string
+  #transferSize = 2048
+  // Non-null when the device speaks the DfuSe (ST/Artery) extension. Detected
+  // from the USB descriptors in open() (e.g. AT32 ROM bootloaders).
+  #dfuseLayout: DfuSeLayout | null = null
 
-  constructor(device: USBDevice, interfaceNumber: number) {
+  constructor(
+    device: USBDevice,
+    interfaceNumber: number,
+    alternateSetting = 0,
+    interfaceName?: string,
+  ) {
     this.#device = device
     this.#interfaceNumber = interfaceNumber
+    this.#alternateSetting = alternateSetting
+    this.#interfaceName = interfaceName
   }
 
   async open() {
     await this.#device.open()
+    if (this.#device.configuration === null) {
+      await this.#device.selectConfiguration(1)
+    }
     await this.#device.claimInterface(this.#interfaceNumber)
+    // DfuSe selects the target memory region (internal flash, option bytes, …)
+    // via the alt setting, so always select the one we connected with.
+    await this.#device.selectAlternateInterface(
+      this.#interfaceNumber,
+      this.#alternateSetting,
+    )
+    await this.#detectDfuSe()
+    console.info(
+      "[DFU] connected. iface=%d alt=%d → mode=%s transferSize=%d layout=%o",
+      this.#interfaceNumber,
+      this.#alternateSetting,
+      this.#dfuseLayout ? "DfuSe" : "plain DFU",
+      this.#transferSize,
+      this.#dfuseLayout
+        ? {
+            start: "0x" + this.#dfuseLayout.startAddress.toString(16),
+            pages: this.#dfuseLayout.pages.length,
+          }
+        : null,
+    )
+  }
+
+  // Read the USB descriptors directly to detect DfuSe and obtain the flash
+  // layout + transfer size. WebUSB frequently leaves USBAlternateInterface.
+  // interfaceName undefined, so we cannot rely on it.
+  async #detectDfuSe() {
+    try {
+      const cfg = await this.#readConfigDescriptor()
+      if (!cfg) {
+        this.#dfuseLayout = parseDfuSeLayout(this.#interfaceName)
+        return
+      }
+      const info = this.#parseConfigForDfu(cfg)
+      if (info.wTransferSize > 0) this.#transferSize = info.wTransferSize
+      let layoutStr = this.#interfaceName
+      if (!layoutStr && info.iInterface > 0) {
+        layoutStr = await this.#readStringDescriptor(info.iInterface)
+      }
+      console.info(
+        "[DFU] descriptor: iInterface=%d bcdDFU=0x%s wTransferSize=%d name=%o",
+        info.iInterface,
+        info.bcdDFUVersion.toString(16),
+        info.wTransferSize,
+        layoutStr,
+      )
+      this.#dfuseLayout = parseDfuSeLayout(layoutStr)
+    } catch (e) {
+      console.warn("[DFU] descriptor read failed:", e)
+      this.#dfuseLayout = parseDfuSeLayout(this.#interfaceName)
+    }
+  }
+
+  async #readConfigDescriptor(): Promise<DataView | null> {
+    const get = (length: number) =>
+      this.#device.controlTransferIn(
+        {
+          requestType: "standard",
+          recipient: "device",
+          request: 0x06, // GET_DESCRIPTOR
+          value: 0x0200, // CONFIGURATION descriptor, index 0
+          index: 0,
+        },
+        length,
+      )
+    const head = await get(9)
+    if (head.status !== "ok" || !head.data || head.data.byteLength < 4) {
+      return null
+    }
+    const total = head.data.getUint16(2, true)
+    const full = await get(total)
+    return full.status === "ok" && full.data ? full.data : null
+  }
+
+  // Walk the configuration descriptor for the DFU functional descriptor
+  // (wTransferSize, bcdDFUVersion) and the iInterface string index of the
+  // interface/alt we are using.
+  #parseConfigForDfu(cfg: DataView) {
+    let iInterface = 0
+    let bcdDFUVersion = 0
+    let wTransferSize = 0
+    let i = 0
+    while (i + 1 < cfg.byteLength) {
+      const bLength = cfg.getUint8(i)
+      if (bLength === 0) break
+      const bType = cfg.getUint8(i + 1)
+      if (bType === 0x04 && i + 8 < cfg.byteLength) {
+        // interface descriptor
+        const bInterfaceNumber = cfg.getUint8(i + 2)
+        const bAlternateSetting = cfg.getUint8(i + 3)
+        if (
+          bInterfaceNumber === this.#interfaceNumber &&
+          bAlternateSetting === this.#alternateSetting
+        ) {
+          iInterface = cfg.getUint8(i + 8)
+        }
+      } else if (bType === 0x21 && i + 8 < cfg.byteLength) {
+        // DFU functional descriptor
+        wTransferSize = cfg.getUint16(i + 5, true)
+        bcdDFUVersion = cfg.getUint16(i + 7, true)
+      }
+      i += bLength
+    }
+    return { iInterface, bcdDFUVersion, wTransferSize }
+  }
+
+  async #readStringDescriptor(
+    index: number,
+    langId = 0x0409,
+  ): Promise<string | undefined> {
+    if (!index) return undefined
+    const r = await this.#device.controlTransferIn(
+      {
+        requestType: "standard",
+        recipient: "device",
+        request: 0x06, // GET_DESCRIPTOR
+        value: 0x0300 | index, // STRING descriptor
+        index: langId,
+      },
+      255,
+    )
+    if (r.status !== "ok" || !r.data || r.data.byteLength < 2) return undefined
+    let s = ""
+    for (let i = 2; i + 1 < r.data.byteLength; i += 2) {
+      s += String.fromCharCode(r.data.getUint16(i, true))
+    }
+    return s
   }
 
   async close() {
@@ -56,7 +215,7 @@ export class DFUDevice {
   }
 
   async getStatus(): Promise<DFU_StatusResponse> {
-    const result = await this.#device.controlTransferIn(
+    let result = await this.#device.controlTransferIn(
       {
         requestType: "class",
         recipient: "interface",
@@ -66,8 +225,30 @@ export class DFUDevice {
       },
       6,
     )
-    if (!result.data || result.data.byteLength < 6) {
-      throw new DFUDeviceError("Failed to get DFU status")
+    // A stalled GETSTATUS usually means the device is in an error state; clear
+    // it once and retry before giving up.
+    if (result.status === "stall") {
+      console.warn("[DFU] GETSTATUS stalled, clearing status and retrying")
+      try {
+        await this.clearStatus()
+      } catch {
+        /* ignore */
+      }
+      result = await this.#device.controlTransferIn(
+        {
+          requestType: "class",
+          recipient: "interface",
+          request: DFU_Request.GETSTATUS,
+          value: 0,
+          index: this.#interfaceNumber,
+        },
+        6,
+      )
+    }
+    if (result.status !== "ok" || !result.data || result.data.byteLength < 6) {
+      throw new DFUDeviceError(
+        `Failed to get DFU status (transfer=${result.status}, len=${result.data?.byteLength ?? 0}, iface=${this.#interfaceNumber})`,
+      )
     }
     const data = result.data
     return {
@@ -139,8 +320,104 @@ export class DFUDevice {
     }
   }
 
+  // DfuSe special command (Set Address Pointer / Erase): a DFU_DNLOAD to
+  // wBlockNum 0 whose payload starts with the command byte. The first
+  // GETSTATUS triggers execution; we then poll until the device is idle again.
+  async #dfuseCommand(bytes: number[]) {
+    await this.download(0, new Uint8Array(bytes).buffer)
+    const status = await this.#pollUntilIdle()
+    if (status.status !== DFU_Status.OK) {
+      throw new DFUDeviceError(
+        `DfuSe command failed: ${DFU_Status[status.status]}`,
+      )
+    }
+    return status
+  }
+
   async flash(firmware: ArrayBuffer, options: DFUFlashOptions = {}) {
-    const { transferSize = 2048, onProgress } = options
+    if (this.#dfuseLayout) {
+      await this.#flashDfuSe(firmware, options)
+    } else {
+      await this.#flashPlain(firmware, options)
+    }
+  }
+
+  // DfuSe flash flow for AT32/STM32-style ROM bootloaders: erase only the pages
+  // covering the firmware (so other flash regions such as the EEPROM-emulated
+  // settings are preserved), set the address pointer, stream data blocks, then
+  // leave DFU so the device boots the new firmware.
+  async #flashDfuSe(firmware: ArrayBuffer, options: DFUFlashOptions) {
+    const { transferSize = this.#transferSize, onProgress } = options
+    const layout = this.#dfuseLayout!
+    const start = layout.startAddress
+    const totalBytes = firmware.byteLength
+
+    await this.#ensureIdle()
+
+    // 1. Erase the pages we are about to write (page-granular, not mass erase).
+    const erasePages = pagesInRange(layout, start, start + totalBytes)
+    console.info(
+      "[DfuSe] flashing %d bytes at 0x%s, erasing %d pages",
+      totalBytes,
+      start.toString(16),
+      erasePages.length,
+    )
+    for (let i = 0; i < erasePages.length; i++) {
+      console.debug(
+        "[DfuSe] erase %d/%d @ 0x%s",
+        i + 1,
+        erasePages.length,
+        erasePages[i].toString(16),
+      )
+      await this.#dfuseCommand([DFUSE_ERASE, ...le32(erasePages[i])])
+    }
+
+    // 2. Set the address pointer to the firmware start.
+    console.info("[DfuSe] set address 0x%s", start.toString(16))
+    await this.#dfuseCommand([DFUSE_SET_ADDRESS, ...le32(start)])
+
+    // 3. Stream data. wBlockNum starts at 2; the device writes each block at
+    //    address = pointer + (wBlockNum - 2) * transferSize.
+    console.info("[DfuSe] writing data (transferSize=%d)", transferSize)
+    let bytesSent = 0
+    let blockNum = 2
+    while (bytesSent < totalBytes) {
+      const chunkSize = Math.min(transferSize, totalBytes - bytesSent)
+      const chunk = firmware.slice(bytesSent, bytesSent + chunkSize)
+
+      await this.download(blockNum, chunk)
+      const status = await this.#pollUntilIdle()
+      if (
+        status.state !== DFU_State.dfuDNLOAD_IDLE &&
+        status.state !== DFU_State.dfuIDLE
+      ) {
+        throw new DFUDeviceError(
+          `DfuSe write failed at 0x${(start + bytesSent).toString(16)}: ` +
+            `${DFU_State[status.state]} (${DFU_Status[status.status]})`,
+        )
+      }
+
+      bytesSent += chunkSize
+      blockNum++
+      onProgress?.(bytesSent, totalBytes)
+    }
+
+    // 4. Leave DFU: set the address pointer, then a zero-length download
+    //    triggers manifestation and the device resets into the new firmware.
+    console.info("[DfuSe] write complete, leaving DFU")
+    await this.#dfuseCommand([DFUSE_SET_ADDRESS, ...le32(start)])
+    try {
+      await this.download(0, new ArrayBuffer(0))
+      await this.#pollUntilIdle()
+    } catch {
+      // The device resets and disconnects on leave — expected.
+    }
+  }
+
+  // Plain DFU 1.1 flash flow (sequential DNLOAD blocks). Kept for devices that
+  // are not DfuSe.
+  async #flashPlain(firmware: ArrayBuffer, options: DFUFlashOptions) {
+    const { transferSize = this.#transferSize, onProgress } = options
     const totalBytes = firmware.byteLength
 
     await this.#ensureIdle()

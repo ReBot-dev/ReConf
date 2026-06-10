@@ -14,13 +14,14 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <script lang="ts">
-  import { CableIcon } from "@lucide/svelte"
+  import { BookOpenIcon, CableIcon } from "@lucide/svelte"
   import brandLogo from "$lib/assets/brand/icon-green.png"
   import Footer from "$lib/components/footer.svelte"
   import { Button } from "$lib/components/ui/button"
   import Configurator from "$lib/configurator/configurator.svelte"
   import type { Keyboard } from "$lib/keyboard"
   import { connect } from "$lib/keyboard/hmk-keyboard.svelte"
+  import { firmwareUpdateState } from "$lib/dfu/firmware-update-state.svelte"
   import { HMK_FIRMWARE_MAX_VERSION } from "$lib/libhmk"
   import { m } from "$lib/paraglide/messages.js"
   import { mode, resetMode, setMode } from "mode-watcher"
@@ -29,6 +30,17 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 
   let keyboard: Keyboard | null = $state(null)
   let prevMode: string | undefined = $state(undefined)
+  // Set when the WebHID device disconnects because it rebooted into DFU for a
+  // firmware update. We keep the configurator mounted so the update dialog can
+  // finish, then return to the connect screen once the flow ends.
+  let disconnectedForUpdate = $state(false)
+
+  $effect(() => {
+    if (!firmwareUpdateState.inProgress && disconnectedForUpdate) {
+      disconnectedForUpdate = false
+      keyboard = null
+    }
+  })
 
   onMount(() => {
     prevMode = mode.current
@@ -45,6 +57,13 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   const handleConnect = async () => {
     try {
       keyboard = await connect(({ metadata: { name } }) => {
+        if (firmwareUpdateState.inProgress) {
+          // Expected disconnect: the keyboard rebooted into DFU for a firmware
+          // update. Keep the configurator (and the update dialog) mounted so
+          // the WebUSB DFU flash can continue.
+          disconnectedForUpdate = true
+          return
+        }
         toast.success(m.toast_disconnected({ name }))
         keyboard = null
       })
@@ -93,6 +112,17 @@ this program. If not, see <https://www.gnu.org/licenses/>.
           <Button href="/demo" size="lg" variant="outline"
             >{m.landing_try_demo()}</Button
           >
+        </div>
+        <div class="mt-4">
+          <Button
+            href="https://rebotlab.net/blog/reconf"
+            size="sm"
+            target="_blank"
+            variant="link"
+          >
+            <BookOpenIcon />
+            {m.landing_about()}
+          </Button>
         </div>
       </div>
     </div>

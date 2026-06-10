@@ -16,7 +16,14 @@
 import { DFU_CLASS, DFU_SUBCLASS } from "./dfu"
 import { DFUDevice, DFUDeviceError } from "./dfu-device"
 
-function findDFUInterface(device: USBDevice): number | null {
+type DFUInterface = {
+  interfaceNumber: number
+  alternateSetting: number
+  interfaceName?: string
+}
+
+function findDFUInterface(device: USBDevice): DFUInterface | null {
+  let first: DFUInterface | null = null
   for (const config of device.configurations) {
     for (const iface of config.interfaces) {
       for (const alt of iface.alternates) {
@@ -24,12 +31,20 @@ function findDFUInterface(device: USBDevice): number | null {
           alt.interfaceClass === DFU_CLASS &&
           alt.interfaceSubclass === DFU_SUBCLASS
         ) {
-          return iface.interfaceNumber
+          const candidate: DFUInterface = {
+            interfaceNumber: iface.interfaceNumber,
+            alternateSetting: alt.alternateSetting,
+            interfaceName: alt.interfaceName ?? undefined,
+          }
+          // Prefer the DfuSe "Internal Flash" alt-setting (where the firmware
+          // lives); fall back to the first DFU interface otherwise.
+          if (alt.interfaceName?.startsWith("@Internal Flash")) return candidate
+          if (!first) first = candidate
         }
       }
     }
   }
-  return null
+  return first
 }
 
 export async function connectDFUDevice(): Promise<DFUDevice> {
@@ -41,12 +56,17 @@ export async function connectDFUDevice(): Promise<DFUDevice> {
     filters: [{ classCode: DFU_CLASS, subclassCode: DFU_SUBCLASS }],
   })
 
-  const interfaceNumber = findDFUInterface(device)
-  if (interfaceNumber === null) {
+  const iface = findDFUInterface(device)
+  if (iface === null) {
     throw new DFUDeviceError("No DFU interface found on the selected device")
   }
 
-  const dfuDevice = new DFUDevice(device, interfaceNumber)
+  const dfuDevice = new DFUDevice(
+    device,
+    iface.interfaceNumber,
+    iface.alternateSetting,
+    iface.interfaceName,
+  )
   await dfuDevice.open()
   return dfuDevice
 }

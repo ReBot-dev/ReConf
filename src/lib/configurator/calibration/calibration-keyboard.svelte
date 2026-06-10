@@ -16,12 +16,18 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 <script lang="ts">
   import * as KeyButton from "$lib/components/key-button"
   import { KeyboardEditorKeyboard } from "$lib/components/keyboard-editor"
-  import { displayDistance } from "$lib/distance"
+  import {
+    distanceDisplayContext,
+    getKeyStrokeMm,
+  } from "$lib/distance-display.svelte"
   import { analogInfoQueryContext } from "../queries/analog-info-query.svelte"
+  import { switchMapQueryContext } from "../queries/switch-map-query.svelte"
 
+  const distanceDisplay = distanceDisplayContext.get()
   const { current: analogInfo } = $derived(
     analogInfoQueryContext.get().analogInfo,
   )
+  const { current: switchMap } = $derived(switchMapQueryContext.get().switchMap)
 </script>
 
 <KeyboardEditorKeyboard>
@@ -31,7 +37,12 @@ this program. If not, see <https://www.gnu.org/licenses/>.
     {:else}
       <KeyButton.Root>
         <span>{analogInfo[key].adcValue}</span>
-        <span>{displayDistance(analogInfo[key].distance)}</span>
+        <span
+          >{distanceDisplay.format(
+            analogInfo[key].distance,
+            getKeyStrokeMm(key, switchMap),
+          )}</span
+        >
       </KeyButton.Root>
     {/if}
   {/snippet}
