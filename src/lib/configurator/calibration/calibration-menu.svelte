@@ -98,6 +98,27 @@ this program. If not, see <https://www.gnu.org/licenses/>.
       step={10}
       title={m.calibration_initial_bottom_out()}
     />
+    {#if demo || isFeatureAvailable("bottomOutDeadzone", version)}
+      <CommitSlider
+        bind:committed={
+          () => calibration?.bottomOutDeadzone ?? 0,
+          (v) =>
+            calibration &&
+            calibrationQuery.set({
+              data: {
+                ...calibration,
+                bottomOutDeadzone: v,
+              },
+            })
+        }
+        description={m.calibration_bottom_out_deadzone_description()}
+        disabled={demo || !calibration}
+        min={0}
+        max={100}
+        step={1}
+        title={m.calibration_bottom_out_deadzone()}
+      />
+    {/if}
     <div class="flex gap-2">
       <Button
         disabled={demo}

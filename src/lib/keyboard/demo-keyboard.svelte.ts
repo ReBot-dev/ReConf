@@ -110,6 +110,7 @@ export class DemoKeyboard implements Keyboard {
     return {
       initialRestValue: (1 << adcResolution) - 1,
       initialBottomOutThreshold: (1 << adcResolution) - 1,
+      bottomOutDeadzone: 10,
     }
   }
   async setCalibration() {}

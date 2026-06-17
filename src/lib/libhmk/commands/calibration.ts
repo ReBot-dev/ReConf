@@ -34,13 +34,16 @@ export async function getCalibration(
   return {
     initialRestValue: reader.uint16(),
     initialBottomOutThreshold: reader.uint16(),
+    // Firmware < 0x0109 does not send this byte; the response is zero-padded so
+    // it reads back as 0 (dead zone disabled), which is the correct fallback.
+    bottomOutDeadzone: reader.uint8(),
   }
 }
 
 export async function setCalibration(
   commander: Commander,
   {
-    data: { initialRestValue, initialBottomOutThreshold },
+    data: { initialRestValue, initialBottomOutThreshold, bottomOutDeadzone },
   }: SetCalibrationParams,
 ) {
   await commander.sendCommand({
@@ -48,6 +51,7 @@ export async function setCalibration(
     payload: [
       ...uint16ToUInt8s(initialRestValue),
       ...uint16ToUInt8s(initialBottomOutThreshold),
+      bottomOutDeadzone,
     ],
   })
 }

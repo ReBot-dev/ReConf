@@ -27,6 +27,18 @@ export type FirmwareChangelogEntry = {
 
 export const firmwareChangelog: FirmwareChangelogEntry[] = [
   {
+    version: 0x0109,
+    date: "2026-06",
+    changes: {
+      en: [
+        "Configurable bottom-out dead zone to prevent input drop-out when bottoming out",
+      ],
+      ja: [
+        "底打ち時の入力抜けを防ぐ、調整可能なボトムアウトデッドゾーンを追加",
+      ],
+    },
+  },
+  {
     version: 0x0108,
     date: "2026-06",
     changes: {
@@ -59,6 +71,14 @@ export type AppChangelogEntry = {
 }
 
 export const appChangelog: AppChangelogEntry[] = [
+  {
+    version: "1.2.0",
+    date: "2026-06",
+    changes: {
+      en: ["Add bottom-out dead zone control (firmware v1.9+)"],
+      ja: ["ボトムアウトデッドゾーンの調整機能を追加（ファーム v1.9 以降）"],
+    },
+  },
   {
     version: "1.1.1",
     date: "2026-06",

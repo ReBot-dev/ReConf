@@ -191,6 +191,8 @@
   "calibration_initial_noise_floor_description": "The initial noise floor represents the estimated analog value when a key is at rest. It should be set slightly higher than the actual analog readings of all keys in their resting position to prevent deadzones. Recalibrate the keyboard to apply changes. This setting applies globally across all profiles.",
   "calibration_initial_bottom_out": "Initial Bottom Out Threshold",
   "calibration_initial_bottom_out_description": "The initial bottom out threshold represents the estimated change in analog value when a key is fully pressed. It should be set slightly lower than the actual change in analog readings when keys are fully pressed to prevent deadzones. Recalibrate the keyboard to apply changes. This setting applies globally across all profiles.",
+  "calibration_bottom_out_deadzone": "Bottom-Out Dead Zone",
+  "calibration_bottom_out_deadzone_description": "Travel near the very bottom of the keystroke (the last portion of the 0–255 range) to treat as fully pressed. Near the bottom the sensor saturates and stem wobble makes the reading jitter; this dead zone keeps the key registered as bottomed out so pressing hard does not cause a false Rapid Trigger release (input drop-out). It only affects the end of the travel, never the actuation point or mid-travel Rapid Trigger. Increase it if you still get drop-outs when bottoming out; set it to 0 to disable. This setting applies globally across all profiles.",
   "calibration_recalibrate": "Recalibrate",
   "calibration_save_threshold": "Save Current Threshold",
   "calibration_save_threshold_success": "Successfully saved calibration threshold.",
