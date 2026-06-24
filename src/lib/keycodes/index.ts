@@ -15,10 +15,16 @@
 
 import { displayUInt16 } from "$lib/integer"
 import type { KeyboardMetadata } from "$lib/keyboard/metadata"
-import { Keycode, MO_GET_LAYER, PF_GET_PROFILE } from "$lib/libhmk/keycodes"
+import {
+  Keycode,
+  MC_GET_INDEX,
+  MO_GET_LAYER,
+  PF_GET_PROFILE,
+} from "$lib/libhmk/keycodes"
 import type { Component } from "svelte"
 import { advancedKeysKeycodeMetadata } from "./advanced-keys"
 import { basicKeycodeMetadata, basicKeycodes } from "./basic"
+import { getMacroKeycodes } from "./macros"
 import { extendedKeycodeMetadata, extendedKeycodes } from "./extended"
 import { gamepadKeycodeMetadata } from "./gamepad"
 import { mediaKeycodeMetadata, mediaKeycodes } from "./media"
@@ -31,6 +37,7 @@ export const keycodeCategories = {
   EXTENDED: "Extended",
   SPECIAL: "Special",
   PROFILES: "Profiles",
+  MACROS: "Macros",
   MEDIA: "Media",
   MOUSE: "Mouse",
   ADVANCED_KEYS: "Advanced Keys",
@@ -88,6 +95,17 @@ export function getKeycodeMetadata(keycode: Keycode): KeycodeMetadata {
     }
   }
 
+  if (Keycode.SP_MACRO_MIN <= keycode && keycode <= Keycode.SP_MACRO_MAX) {
+    const index = MC_GET_INDEX(keycode)
+    return {
+      name: `MC(${index})`,
+      tooltip: `Play Macro ${index}`,
+      keycode,
+      webCodes: [],
+      category: "Macros",
+    }
+  }
+
   return (
     keycodeMetadataMap.get(keycode) ?? {
       name: displayUInt16(keycode),
@@ -108,6 +126,7 @@ export function getCategorizedKeycodes({
     ["Extended", extendedKeycodes],
     ["Special", getSpecialKeycodes(numLayers)],
     ["Profiles", getProfilesKeycodes(numProfiles)],
+    ["Macros", getMacroKeycodes()],
     ["Media", mediaKeycodes],
     ["Mouse", mouseKeycodes],
   ]

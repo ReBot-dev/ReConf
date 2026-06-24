@@ -27,6 +27,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   const actuationPointTab = import("./performance/actuation-point-tab.svelte")
   const rapidTriggerTab = import("./performance/rapid-trigger-tab.svelte")
   const advancedKeysTab = import("./advanced-keys/advanced-keys-tab.svelte")
+  const macrosTab = import("./macros/macros-tab.svelte")
   const gamepadTab = import("./gamepad/gamepad-tab.svelte")
   const switchProfileTab = import("./switch-profile/switch-profile-tab.svelte")
   const calibrationTab = import("./calibration/calibration-tab.svelte")
@@ -71,6 +72,13 @@ this program. If not, see <https://www.gnu.org/licenses/>.
     <Tabs.Content value="advanced-keys">
       {#snippet child({ props })}
         <AdvancedKeysTab {...props} />
+      {/snippet}
+    </Tabs.Content>
+  {/await}
+  {#await macrosTab then { default: MacrosTab }}
+    <Tabs.Content value="macros">
+      {#snippet child({ props })}
+        <MacrosTab {...props} />
       {/snippet}
     </Tabs.Content>
   {/await}

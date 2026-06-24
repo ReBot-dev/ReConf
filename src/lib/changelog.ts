@@ -27,6 +27,14 @@ export type FirmwareChangelogEntry = {
 
 export const firmwareChangelog: FirmwareChangelogEntry[] = [
   {
+    version: 0x010a,
+    date: "2026-06",
+    changes: {
+      en: ["Macros: play a recorded sequence of keys from a single key"],
+      ja: ["マクロ：1キーから記録したキー操作の並びを再生"],
+    },
+  },
+  {
     version: 0x0109,
     date: "2026-06",
     changes: {
@@ -71,6 +79,14 @@ export type AppChangelogEntry = {
 }
 
 export const appChangelog: AppChangelogEntry[] = [
+  {
+    version: "1.3.0",
+    date: "2026-06",
+    changes: {
+      en: ["Add macro editor (firmware v1.10+)"],
+      ja: ["マクロエディタを追加（ファーム v1.10 以降）"],
+    },
+  },
   {
     version: "1.2.0",
     date: "2026-06",

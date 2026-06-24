@@ -22,6 +22,7 @@ import {
   type HMK_AdvancedKey,
 } from "$lib/libhmk/advanced-keys"
 import { HMK_GamepadButton, type HMK_GamepadOptions } from "$lib/libhmk/gamepad"
+import { HMK_MACRO_COUNT, type HMK_Macro } from "$lib/libhmk/macro"
 import type {
   DuplicateProfileParams,
   GetActuationMapParams,
@@ -37,6 +38,7 @@ import type {
   SetGamepadButtonsParams,
   SetGamepadOptionsParams,
   SetKeymapParams,
+  SetMacrosParams,
   SetOptionsParams,
   SetSwitchMapParams,
   SetTickRateParams,
@@ -76,6 +78,7 @@ type DemoKeyboardState = {
   options: HMK_Options
   profiles: DemoKeyboardProfileState[]
   switchMap: number[]
+  macros: HMK_Macro[]
 }
 
 export class DemoKeyboard implements Keyboard {
@@ -94,6 +97,7 @@ export class DemoKeyboard implements Keyboard {
       structuredClone(defaultProfile(i)),
     ),
     switchMap: Array(numKeys).fill(0),
+    macros: Array.from({ length: HMK_MACRO_COUNT }, () => []),
   }
 
   async disconnect() {}
@@ -187,5 +191,12 @@ export class DemoKeyboard implements Keyboard {
     for (let i = 0; i < data.length; i++) {
       this.#state.switchMap[offset + i] = data[i]
     }
+  }
+
+  async getMacros() {
+    return this.#state.macros
+  }
+  async setMacros({ data }: SetMacrosParams) {
+    this.#state.macros = data
   }
 }

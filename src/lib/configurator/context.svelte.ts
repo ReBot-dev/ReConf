@@ -150,6 +150,7 @@ export type ConfiguratorTabs =
   | "actuation-point"
   | "rapid-trigger"
   | "advanced-keys"
+  | "macros"
   | "gamepad"
   | "switch-profile"
   | "calibration"

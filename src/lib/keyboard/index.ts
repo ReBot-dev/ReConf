@@ -18,6 +18,7 @@ import type { HMK_Actuation } from "$lib/libhmk/actuation"
 import type { HMK_AdvancedKey } from "$lib/libhmk/advanced-keys"
 import type { HMK_AnalogInfo } from "$lib/libhmk/commands"
 import type { HMK_GamepadOptions } from "$lib/libhmk/gamepad"
+import type { HMK_Macro } from "$lib/libhmk/macro"
 import { Context } from "runed"
 import type { KeyboardMetadata } from "./metadata"
 
@@ -52,6 +53,8 @@ export type GetGamepadOptionsParams = GetProfileParams
 export type SetGamepadOptionsParams = SetProfileParams<HMK_GamepadOptions>
 
 export type SetSwitchMapParams = { offset: number; data: number[] }
+
+export type SetMacrosParams = SetParams<HMK_Macro[]>
 
 export type KeyboardState = {
   id: string
@@ -95,6 +98,9 @@ export type KeyboardAction = {
 
   getSwitchMap(): Promise<number[]>
   setSwitchMap(params: SetSwitchMapParams): Promise<void>
+
+  getMacros(): Promise<HMK_Macro[]>
+  setMacros(params: SetMacrosParams): Promise<void>
 }
 
 export type Keyboard = KeyboardState & KeyboardAction

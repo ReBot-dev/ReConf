@@ -185,6 +185,10 @@ export enum Keycode {
   SP_MOUSE_BUTTON_4 = 0x9e,
   SP_MOUSE_BUTTON_5 = 0x9f,
 
+  // Macro keycodes
+  SP_MACRO_MIN = 0xb0,
+  SP_MACRO_MAX = 0xbf,
+
   // Layer keycodes
   SP_MO_MIN = 0xc0,
   SP_MO_MAX = 0xc7,
@@ -357,4 +361,12 @@ export function PF(profile: number) {
 
 export function PF_GET_PROFILE(keycode: number) {
   return keycode & 0x07
+}
+
+export function MC(index: number) {
+  return Keycode.SP_MACRO_MIN | index
+}
+
+export function MC_GET_INDEX(keycode: number) {
+  return keycode & 0x0f
 }

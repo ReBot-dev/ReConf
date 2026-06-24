@@ -17,11 +17,12 @@ import { uint8Schema, uint16Schema } from "$lib/integer"
 import z from "zod"
 
 export const HMK_FIRMWARE_MIN_VERSION = 0x0104
-export const HMK_FIRMWARE_MAX_VERSION = 0x0109
+export const HMK_FIRMWARE_MAX_VERSION = 0x010a
 export const featureVersionMap = {
   pollingRateSwitch: 0x0105,
   saveCalibrationThreshold: 0x0107,
   bottomOutDeadzone: 0x0109,
+  macro: 0x010a,
 } as const
 export type Feature = keyof typeof featureVersionMap
 

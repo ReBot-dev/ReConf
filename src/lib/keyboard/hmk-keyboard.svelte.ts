@@ -55,8 +55,10 @@ import {
 } from "$lib/libhmk/commands/profile"
 import { reboot } from "$lib/libhmk/commands/reboot"
 import { getSerial } from "$lib/libhmk/commands/serial"
+import { getMacroBuffer, setMacroBuffer } from "$lib/libhmk/commands/macro"
 import { getSwitchMap, setSwitchMap } from "$lib/libhmk/commands/switch-map"
 import { getTickRate, setTickRate } from "$lib/libhmk/commands/tick-rate"
+import { decodeMacros, encodeMacros } from "$lib/libhmk/macro"
 import { displayVersion, isWebHIDSSupported } from "$lib/utils"
 import type {
   DuplicateProfileParams,
@@ -74,6 +76,7 @@ import type {
   SetGamepadButtonsParams,
   SetGamepadOptionsParams,
   SetKeymapParams,
+  SetMacrosParams,
   SetOptionsParams,
   SetSwitchMapParams,
   SetTickRateParams,
@@ -204,6 +207,13 @@ class HMKKeyboard implements Keyboard {
   }
   setSwitchMap(params: SetSwitchMapParams) {
     return setSwitchMap(this.commander, params)
+  }
+
+  async getMacros() {
+    return decodeMacros(await getMacroBuffer(this.commander))
+  }
+  async setMacros({ data }: SetMacrosParams) {
+    await setMacroBuffer(this.commander, encodeMacros(data))
   }
 }
 

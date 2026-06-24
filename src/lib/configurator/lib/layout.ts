@@ -19,6 +19,7 @@ import {
   Gamepad2Icon,
   GaugeIcon,
   Grid2X2Icon,
+  ListOrderedIcon,
   PencilIcon,
   SettingsIcon,
   SquareChevronUpIcon,
@@ -70,6 +71,11 @@ export function getSidebarTabGroups(): SidebarTabGroup[] {
           label: () => m.sidebar_advanced_keys(),
           value: "advanced-keys",
           icon: SquareChevronUpIcon,
+        },
+        {
+          label: () => m.sidebar_macros(),
+          value: "macros",
+          icon: ListOrderedIcon,
         },
         {
           label: () => m.sidebar_gamepad(),
