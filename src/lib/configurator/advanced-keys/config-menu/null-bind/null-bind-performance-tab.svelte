@@ -27,7 +27,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   } from "$lib/libhmk/actuation"
   import type { HMK_AKNullBind } from "$lib/libhmk/advanced-keys"
   import { m } from "$lib/paraglide/messages.js"
-  import { cn, optMap, setToIntervals, type WithoutChildren } from "$lib/utils"
+  import { cn, setToIntervals, type WithoutChildren } from "$lib/utils"
   import type { HTMLAttributes } from "svelte/elements"
   import { configMenuStateContext } from "../context.svelte"
 

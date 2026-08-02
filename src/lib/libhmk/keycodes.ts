@@ -203,6 +203,8 @@ export enum Keycode {
   SP_PROFILE_SWAP = 0xd2,
   SP_PROFILE_NEXT = 0xd3,
   SP_BOOT = 0xd4,
+  // Escape normally, grave/tilde while Shift or GUI is held (QMK Grave Escape)
+  SP_GRAVE_ESCAPE = 0xd5,
 
   XXXXXXX = KC_NO,
   _______ = KC_TRANSPARENT,

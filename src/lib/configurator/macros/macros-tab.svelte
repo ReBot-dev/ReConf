@@ -98,6 +98,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
   // True if some keycode is pressed (down) more often than it is released (up),
   // i.e. it would still be held when the macro finishes.
   function hasStuckKey(events: HMK_MacroEvent[]): boolean {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local tally, discarded before returning
     const balance = new Map<number, number>()
     for (const event of events) {
       if (event.type === "down")

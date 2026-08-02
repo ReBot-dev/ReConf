@@ -46,6 +46,7 @@ import {
   setGamepadOptions,
 } from "$lib/libhmk/commands/gamepad-options"
 import { getKeymap, setKeymap } from "$lib/libhmk/commands/keymap"
+import { getMacroBuffer, setMacroBuffer } from "$lib/libhmk/commands/macro"
 import { getMetadata } from "$lib/libhmk/commands/metadata"
 import { getOptions, setOptions } from "$lib/libhmk/commands/options"
 import {
@@ -55,7 +56,6 @@ import {
 } from "$lib/libhmk/commands/profile"
 import { reboot } from "$lib/libhmk/commands/reboot"
 import { getSerial } from "$lib/libhmk/commands/serial"
-import { getMacroBuffer, setMacroBuffer } from "$lib/libhmk/commands/macro"
 import { getSwitchMap, setSwitchMap } from "$lib/libhmk/commands/switch-map"
 import { getTickRate, setTickRate } from "$lib/libhmk/commands/tick-rate"
 import { decodeMacros, encodeMacros } from "$lib/libhmk/macro"

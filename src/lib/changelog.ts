@@ -27,6 +27,30 @@ export type FirmwareChangelogEntry = {
 
 export const firmwareChangelog: FirmwareChangelogEntry[] = [
   {
+    version: 0x010c,
+    date: "2026-08",
+    changes: {
+      en: [
+        "Grave Escape key (Esc/~): ` and ~ now require Shift only, and Ctrl always sends Escape. GUI+Esc and Ctrl+Shift+Esc work again (lock screen, Force Quit, Task Manager)",
+      ],
+      ja: [
+        "Grave Escape キー（Esc/~）：` / ~ の入力を Shift 押下時のみに変更し、Ctrl 押下中は常に Escape を送るよう修正。GUI+Esc と Ctrl+Shift+Esc が再び動作します（画面ロック、強制終了、タスクマネージャー）",
+      ],
+    },
+  },
+  {
+    version: 0x010b,
+    date: "2026-07",
+    changes: {
+      en: [
+        "Grave Escape key (Esc/~): Escape normally, ` or ~ while Shift or GUI is held",
+      ],
+      ja: [
+        "Grave Escape キー（Esc/~）：通常は Escape、Shift または GUI 押下中は ` / ~ を入力",
+      ],
+    },
+  },
+  {
     version: 0x010a,
     date: "2026-06",
     changes: {
@@ -79,6 +103,16 @@ export type AppChangelogEntry = {
 }
 
 export const appChangelog: AppChangelogEntry[] = [
+  {
+    version: "1.3.1",
+    date: "2026-07",
+    changes: {
+      en: ["Add Grave Escape (Esc/~) to the remap key list (firmware v1.11+)"],
+      ja: [
+        "リマップのキー一覧に Grave Escape（Esc/~）を追加（ファーム v1.11 以降）",
+      ],
+    },
+  },
   {
     version: "1.3.0",
     date: "2026-06",

@@ -15,8 +15,8 @@
 
 import { DataViewReader } from "$lib/data-view-reader"
 import type { Commander } from "$lib/keyboard/commander"
-import { HMK_MACRO_BUFFER_SIZE } from "../macro"
 import { HMK_Command } from "."
+import { HMK_MACRO_BUFFER_SIZE } from "../macro"
 
 const GET_MACRO_MAX_ENTRIES = 63
 

@@ -14,13 +14,13 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <script lang="ts">
-  import * as Popover from "$lib/components/ui/popover"
-  import * as Sidebar from "$lib/components/ui/sidebar"
   import {
     appChangelog,
     changelogChanges,
     firmwareChangelog,
   } from "$lib/changelog"
+  import * as Popover from "$lib/components/ui/popover"
+  import * as Sidebar from "$lib/components/ui/sidebar"
   import { keyboardContext } from "$lib/keyboard"
   import { HMK_FIRMWARE_MAX_VERSION } from "$lib/libhmk"
   import { m } from "$lib/paraglide/messages.js"
@@ -65,7 +65,8 @@ this program. If not, see <https://www.gnu.org/licenses/>.
               <div class="flex flex-col gap-1">
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-medium">v{entry.version}</span>
-                  <span class="text-xs text-muted-foreground">{entry.date}</span>
+                  <span class="text-xs text-muted-foreground">{entry.date}</span
+                  >
                   {#if entry.version === appVersion}
                     <span
                       class="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
@@ -75,7 +76,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
                   {/if}
                 </div>
                 <ul class="ml-4 list-disc text-xs text-muted-foreground">
-                  {#each changelogChanges(entry) as change}
+                  {#each changelogChanges(entry) as change, i (i)}
                     <li>{change}</li>
                   {/each}
                 </ul>
@@ -90,27 +91,28 @@ this program. If not, see <https://www.gnu.org/licenses/>.
               {m.firmware_changelog_title()}
             </span>
             {#each firmwareChangelog as entry (entry.version)}
-            <div class="flex flex-col gap-1">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium">
-                  {displayVersion(entry.version)}
-                </span>
-                <span class="text-xs text-muted-foreground">{entry.date}</span>
-                {#if entry.version === version}
-                  <span
-                    class="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
-                  >
-                    {m.firmware_changelog_current()}
+              <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">
+                    {displayVersion(entry.version)}
                   </span>
-                {/if}
+                  <span class="text-xs text-muted-foreground">{entry.date}</span
+                  >
+                  {#if entry.version === version}
+                    <span
+                      class="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+                    >
+                      {m.firmware_changelog_current()}
+                    </span>
+                  {/if}
+                </div>
+                <ul class="ml-4 list-disc text-xs text-muted-foreground">
+                  {#each changelogChanges(entry) as change, i (i)}
+                    <li>{change}</li>
+                  {/each}
+                </ul>
               </div>
-              <ul class="ml-4 list-disc text-xs text-muted-foreground">
-                {#each changelogChanges(entry) as change}
-                  <li>{change}</li>
-                {/each}
-              </ul>
-            </div>
-          {/each}
+            {/each}
           </div>
         </div>
       </Popover.Content>

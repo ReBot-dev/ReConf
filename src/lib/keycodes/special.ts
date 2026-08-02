@@ -186,6 +186,14 @@ export const specialKeycodeMetadata: KeycodeMetadata[] = [
     webCodes: [],
     category: "Special",
   },
+  {
+    name: "Esc\n~",
+    tooltip:
+      "Grave Escape. Escape normally, ` or ~ while Shift is held. Ctrl always sends Escape. Requires firmware v1.11 or later (v1.11 itself also sends ` or ~ while GUI is held).",
+    keycode: Keycode.SP_GRAVE_ESCAPE,
+    webCodes: [],
+    category: "Special",
+  },
 ]
 
 export function getSpecialKeycodes(numLayers: number) {
@@ -210,5 +218,6 @@ export function getSpecialKeycodes(numLayers: number) {
     ...[...Array(numLayers)].map((_, i) => MO(i)),
     Keycode.SP_LAYER_LOCK,
     Keycode.SP_BOOT,
+    Keycode.SP_GRAVE_ESCAPE,
   ]
 }

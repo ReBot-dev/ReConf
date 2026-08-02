@@ -22,8 +22,8 @@ import {
   type DFU_StatusResponse,
 } from "./dfu"
 import {
-  parseDfuSeLayout,
   pagesInRange,
+  parseDfuSeLayout,
   type DfuSeLayout,
 } from "./dfuse-layout"
 

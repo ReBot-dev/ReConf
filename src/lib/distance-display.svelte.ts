@@ -31,14 +31,18 @@ export class DistanceDisplay {
       if (stored === "mm" || stored === "pct" || stored === "raw") {
         this.mode = stored
       }
-    } catch {}
+    } catch {
+      // localStorage can be unavailable (private mode, blocked storage)
+    }
   }
 
   setMode(mode: DistanceDisplayMode) {
     this.mode = mode
     try {
       localStorage.setItem(STORAGE_KEY, mode)
-    } catch {}
+    } catch {
+      // Persisting the preference is best-effort
+    }
   }
 
   format(v: number, strokeMm?: number): string {
